@@ -2,12 +2,12 @@ import sys, requests
 from PyQt5.QtWidgets import (
     QApplication, QWidget, QHBoxLayout,
     QTextEdit, QPushButton, QTreeWidget, QMessageBox, QDialog, QDialogButtonBox,
-    QSpacerItem, QSizePolicy, QTreeWidgetItem
+    QSpacerItem, QSizePolicy, QTreeWidgetItem, QVBoxLayout, QLabel, QLineEdit, QGraphicsDropShadowEffect
 )
 from PyQt5.QtGui import QIcon, QColor
 from PyQt5.QtCore import Qt
-from titlebar import TitleBar 
-from PyQt5.QtWidgets import QDialog, QVBoxLayout, QLabel, QLineEdit, QPushButton, QGraphicsDropShadowEffect
+from titlebar import TitleBar
+from dm import DMWindow
 
 class TokenDialog(QDialog):
     def __init__(self):
@@ -49,8 +49,12 @@ class TokenDialog(QDialog):
 
         layout = QVBoxLayout(self)
         layout.setContentsMargins(0, 0, 0, 0)
+
+        # Custom title bar
         self.title_bar = TitleBar(self)
         layout.addWidget(self.title_bar)
+
+        # Form layout
         form_layout = QVBoxLayout()
         form_layout.setContentsMargins(24, 24, 24, 24)
         form_layout.setSpacing(12)
@@ -74,7 +78,7 @@ class Anyom(QWidget):
     def __init__(self, token):
         super().__init__()
         self.token = token
-        self.channel_map = {} 
+        self.channel_map = {}
 
         self.setWindowFlags(Qt.FramelessWindowHint)
         self.setMinimumSize(800, 600)
@@ -130,6 +134,26 @@ class Anyom(QWidget):
         content.setContentsMargins(20, 20, 20, 20)
         content.setSpacing(20)
 
+        # DM button
+        self.dm_button = QPushButton("Direct Message")
+        self.dm_button.setStyleSheet("""
+                QPushButton {
+                    background-color: #5865F2;
+                    color: white;
+                    border: none;
+                    border-radius: 8px;
+                    padding: 8px 12px;
+                    font-weight: bold;
+                }
+                QPushButton:hover {
+                    background-color: #4752C4;
+                }
+            """)
+        self.dm_button.clicked.connect(self.open_dm_window)
+        button_panel = QHBoxLayout()
+        button_panel.addWidget(self.dm_button)
+        layout.addLayout(button_panel)
+
         self.guild_tree = QTreeWidget()
         self.guild_tree.setHeaderHidden(True)
         self.guild_tree.setFixedWidth(250)
@@ -155,6 +179,11 @@ class Anyom(QWidget):
 
         self.load_guilds_and_channels()
 
+    def open_dm_window(self):
+        self.dm_window = DMWindow(self.token)
+        self.dm_window.show()
+
+
     def discord_request(self, method, endpoint, **kwargs):
         headers = {
             "Authorization": f"Bot {self.token}",
@@ -179,7 +208,7 @@ class Anyom(QWidget):
 
             channels = self.discord_request("GET", f"guilds/{guild_id}/channels")
             for ch in channels:
-                if ch["type"] == 0:
+                if ch["type"] == 0:  # text channel
                     channel_name = ch["name"]
                     channel_id = ch["id"]
                     channel_item = QTreeWidgetItem([channel_name])
@@ -189,7 +218,7 @@ class Anyom(QWidget):
     def on_channel_selected(self, item, column):
         parent = item.parent()
         if not parent:
-            return  
+            return 
 
         guild_name = parent.text(0)
         channel_name = item.text(0)
@@ -245,7 +274,7 @@ if __name__ == "__main__":
     if dialog.exec_() == QDialog.Accepted:
         token = dialog.get_token()
         if token:
-            window = Anyom(token) 
+            window = Anyom(token)
             window.show()
             sys.exit(app.exec_())
         else:
