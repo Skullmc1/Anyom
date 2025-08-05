@@ -27,4 +27,4 @@ Anyom is a lightweight desktop app for sending messages to Discord channels usin
   python main.py
   ```
 
--# the font is from google fonts
+*the font is from google fonts
